@@ -17,49 +17,44 @@ function App() {
                     <Route path="/" element={<Navigate to="/login" />} />
                     <Route path="/login" element={<Login />} />
 
-                    <Route path="/home" element={
-                        <ProtectedRoute>
+                    <Route element={<ProtectedRoute />}>
+                        <Route path="/home" element={
                             <div className="flex">
                                 <Sidebar />
                                 <div className="flex-1 p-6">
                                     <Home />
                                 </div>
                             </div>
-                        </ProtectedRoute>
-                    } />
+                        } />
+                    </Route>
 
-                    <Route path="/usuarios" element={
-                        <ProtectedRoute>
+                    {/* Solo ADMIN puede acceder */}
+                    <Route element={<ProtectedRoute requiredRole="admin" />}>
+                        <Route path="/usuarios" element={
                             <div className="flex">
                                 <Sidebar />
                                 <div className="flex-1 p-6">
                                     <Usuarios />
                                 </div>
                             </div>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/productos" element={
-                        <ProtectedRoute>
+                        } />
+                        <Route path="/productos" element={
                             <div className="flex">
                                 <Sidebar />
                                 <div className="flex-1 p-6">
                                     <Productos />
                                 </div>
                             </div>
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="/categorias" element={
-                        <ProtectedRoute>
+                        } />
+                        <Route path="/categorias" element={
                             <div className="flex">
                                 <Sidebar />
                                 <div className="flex-1 p-6">
                                     <Categorias />
                                 </div>
                             </div>
-                        </ProtectedRoute>
-                    } />
+                        } />
+                    </Route>
                 </Routes>
             </AuthProvider>
         </Router>

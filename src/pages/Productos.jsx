@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Swal from "sweetalert2";
+import Swal from "sweetalert2"
+import { FaPlus } from "react-icons/fa";;
 import { FaEdit, FaTrash } from "react-icons/fa";
 
 const Productos = () => {
@@ -13,6 +14,14 @@ const Productos = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [productoEdit, setProductoEdit] = useState({
         id: "",
+        nombre: "",
+        descripcion: "",
+        precio: "",
+        cantidad: "",
+        categoriaId: "",
+    });
+    const [modalAgregarOpen, setModalAgregarOpen] = useState(false);
+    const [nuevoProducto, setNuevoProducto] = useState({
         nombre: "",
         descripcion: "",
         precio: "",
@@ -51,6 +60,8 @@ const Productos = () => {
         }
     };
 
+
+
     const handleDelete = async (id) => {
         const confirmDelete = await Swal.fire({
             title: "¿Estás seguro?",
@@ -76,6 +87,7 @@ const Productos = () => {
         }
     };
 
+
     const handleEditClick = (producto) => {
         setProductoEdit({
             id: producto.id,
@@ -86,6 +98,19 @@ const Productos = () => {
             categoriaId: categorias.find((c) => c.nombre === producto.categoria)?.id || "",
         });
         setModalOpen(true);
+    };
+
+    const handleCreate = async () => {
+        try {
+            await axios.post("http://localhost:5016/api/productos/crear", nuevoProducto, {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            });
+            fetchProductos();
+            setModalAgregarOpen(false);
+            Swal.fire("Creado", "El producto ha sido agregado correctamente", "success");
+        } catch {
+            Swal.fire("Error", "No se pudo agregar el producto", "error");
+        }
     };
 
     const handleUpdate = async () => {
@@ -101,9 +126,18 @@ const Productos = () => {
         }
     };
 
+
     return (
         <div className="p-6">
             <h2 className="text-3xl font-bold mb-6 text-purple-700">📦 Gestión de Productos</h2>
+            <div className="flex justify-end mb-4">
+                <button
+                    onClick={() => setModalOpen(true)}
+                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center gap-2"
+                >
+                    <FaPlus/> Agregar Producto
+                </button>
+            </div>
 
             {/* Filtros */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -142,6 +176,7 @@ const Productos = () => {
 
             {/* Tabla */}
             <div className="overflow-x-auto">
+
                 <table className="w-full border-collapse border border-gray-300 shadow-lg">
                     <thead>
                     <tr className="bg-purple-600 text-white">
@@ -165,7 +200,7 @@ const Productos = () => {
                             </td>
                             <td className="border px-4 py-2">{producto.categoria}</td>
                             <td className="border px-4 py-2">
-                            {new Date(producto.fechaCreacion).toLocaleDateString("es-ES", {
+                                {new Date(producto.fechaCreacion).toLocaleDateString("es-ES", {
                                     year: "numeric",
                                     month: "long",
                                     day: "numeric"
@@ -188,6 +223,70 @@ const Productos = () => {
             </div>
 
             {/* MODAL */}
+
+            {modalAgregarOpen && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white p-6 rounded shadow-lg w-1/3">
+                        <h2 className="text-2xl font-bold mb-4">➕ Agregar Producto</h2>
+
+                        <label>Nombre:</label>
+                        <input
+                            type="text"
+                            value={nuevoProducto.nombre}
+                            onChange={(e) => setNuevoProducto({...nuevoProducto, nombre: e.target.value})}
+                            className="border p-2 w-full rounded mb-4"
+                        />
+
+                        <label>Descripción:</label>
+                        <textarea
+                            value={nuevoProducto.descripcion}
+                            onChange={(e) => setNuevoProducto({...nuevoProducto, descripcion: e.target.value})}
+                            className="border p-2 w-full rounded mb-4"
+                        ></textarea>
+
+                        <label>Precio:</label>
+                        <input
+                            type="number"
+                            value={nuevoProducto.precio}
+                            onChange={(e) => setNuevoProducto({...nuevoProducto, precio: e.target.value})}
+                            className="border p-2 w-full rounded mb-4"
+                        />
+
+                        <label>Cantidad:</label>
+                        <input
+                            type="number"
+                            value={nuevoProducto.cantidad}
+                            onChange={(e) => setNuevoProducto({...nuevoProducto, cantidad: e.target.value})}
+                            className="border p-2 w-full rounded mb-4"
+                        />
+
+                        <label>Categoría:</label>
+                        <select
+                            value={nuevoProducto.categoriaId}
+                            onChange={(e) => setNuevoProducto({...nuevoProducto, categoriaId: e.target.value})}
+                            className="border p-2 w-full rounded mb-4"
+                        >
+                            <option value="">Seleccionar Categoría</option>
+                            {categorias.map((c) => (
+                                <option key={c.id} value={c.id}>{c.nombre}</option>
+                            ))}
+                        </select>
+
+                        <div className="flex justify-end space-x-2">
+                            <button onClick={() => setModalAgregarOpen(false)}
+                                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+                                ❌ Cancelar
+                            </button>
+                            <button onClick={handleCreate}
+                                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
+                                💾 Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
             {modalOpen && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white p-6 rounded shadow-lg w-1/3">
