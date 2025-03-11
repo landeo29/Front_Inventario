@@ -28,7 +28,6 @@ function App() {
                         } />
                     </Route>
 
-                    {/* Solo ADMIN puede acceder */}
                     <Route element={<ProtectedRoute requiredRole="admin" />}>
                         <Route path="/usuarios" element={
                             <div className="flex">
