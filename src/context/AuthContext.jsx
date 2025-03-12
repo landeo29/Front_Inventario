@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
             setUser({ token, role, userId });
         }
 
-        setLoading(false); // Solo cuando terminamos de verificar el storage
+        setLoading(false);
     }, []);
 
     const login = (token, role, userId) => {
