@@ -54,13 +54,17 @@ const Productos = () => {
             const response = await axios.get("http://localhost:5016/api/categorias/listar", {
                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             });
+
             if (response.status === 200) {
                 setCategorias(response.data);
             }
         } catch {
-            Swal.fire("Error", "No se pudieron cargar las categorías", "error");
+            if (esAdmin) {
+                Swal.fire("Error", "No se pudieron cargar las categorías", "error");
+            }
         }
     };
+
 
     const handleDelete = async (id) => {
         const confirmDelete = await Swal.fire({
@@ -161,12 +165,65 @@ const Productos = () => {
     };
 
     const productosFiltrados = productos.filter((producto) => {
-        const nombreMatch = producto.nombre.toLowerCase().includes(filtroNombre.toLowerCase());
-        const categoriaMatch = !filtroCategoria || producto.categoria === filtroCategoria;
-        const precioMinMatch = !filtroPrecioMin || producto.precio >= parseFloat(filtroPrecioMin);
-        const precioMaxMatch = !filtroPrecioMax || producto.precio <= parseFloat(filtroPrecioMax);
-        return nombreMatch && categoriaMatch && precioMinMatch && precioMaxMatch;
+        return (
+            producto.nombre.toLowerCase().includes(filtroNombre.toLowerCase()) &&
+            (filtroCategoria === "" || producto.categoriaId.toString() === filtroCategoria) && // 👈 Comparar con el ID
+            (filtroPrecioMin === "" || producto.precio >= parseFloat(filtroPrecioMin)) &&
+            (filtroPrecioMax === "" || producto.precio <= parseFloat(filtroPrecioMax))
+        );
     });
+
+
+
+
+    const generarReporte = async () => {
+        try {
+            const response = await fetch("http://localhost:5016/api/reporte/productos-inventario-bajo", {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error("Error al generar el reporte");
+            }
+
+            // Convertir la respuesta en un Blob para descargar el archivo PDF
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            // Crear un enlace invisible para la descarga
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "reporte_productos_inventario_bajo.pdf";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            // ✅ Mostrar alerta de éxito con SweetAlert2
+            Swal.fire({
+                title: "📄 Reporte generado con éxito",
+                text: "El archivo se ha descargado correctamente.",
+                icon: "success",
+                confirmButtonText: "OK",
+                timer: 3000,
+                timerProgressBar: true,
+            });
+        } catch (error) {
+            console.error("Error al descargar el PDF:", error);
+
+            // ❌ Mostrar alerta de error
+            Swal.fire({
+                title: "❌ Error al generar el reporte",
+                text: "Hubo un problema al descargar el archivo. Intenta de nuevo.",
+                icon: "error",
+                confirmButtonText: "Cerrar",
+            });
+        }
+    };
+
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
@@ -177,9 +234,19 @@ const Productos = () => {
                     </h2>
                 </div>
 
+
                 <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                     <div className="flex flex-col md:flex-row justify-between items-center mb-6">
                         <h3 className="text-xl font-semibold text-gray-700 mb-4 md:mb-0">Filtros de búsqueda</h3>
+                        {esAdmin && (
+                            <button
+                                onClick={generarReporte}
+                                className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-800 transition duration-300 shadow-md flex items-center gap-2"
+                            >
+                                📄 Generar Reporte PDF
+                            </button>
+                        )}
+
                         {esAdmin && (
                             <button
                                 onClick={() => setModalAgregarOpen(true)}
@@ -210,17 +277,23 @@ const Productos = () => {
                             <select
                                 value={filtroCategoria}
                                 onChange={(e) => setFiltroCategoria(e.target.value)}
-                                className="pl-10 border border-gray-300 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400 w-full transition duration-200 appearance-none"
+                                className="border border-gray-300 p-3 rounded-lg shadow-sm w-full text-center"
                             >
                                 <option value="">Todas las Categorías</option>
-                                {categorias.map((c) => (
-                                    <option key={c.id} value={c.nombre}>{c.nombre}</option>
-                                ))}
+                                {categorias.length > 0 ? (
+                                    categorias.map((c) => (
+                                        <option key={c.id} value={c.id}>{c.nombre}</option>
+                                    ))
+                                ) : (
+                                    <option disabled>No hay categorías disponibles</option>
+                                )}
                             </select>
+
+
                         </div>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <FaDollarSign className="text-gray-400" />
+                                <FaDollarSign className="text-gray-400"/>
                             </div>
                             <input
                                 type="number"
