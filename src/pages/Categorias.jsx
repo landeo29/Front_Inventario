@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { FaPlus, FaTrash, FaSearch, FaTable, FaFilter } from "react-icons/fa";
+import { FaPlus, FaTrash, FaSearch, FaTable, FaFilter, FaEdit } from "react-icons/fa";
 
 const Categorias = () => {
     const [categorias, setCategorias] = useState([]);
     const [filtroNombre, setFiltroNombre] = useState("");
     const [modalAgregarOpen, setModalAgregarOpen] = useState(false);
+
+    const [modalEditarOpen, setModalEditarOpen] = useState(false);
+    const [categoriaEdit, setCategoriaEdit] = useState({ id: null, nombre: "" });
+
     const [nuevaCategoria, setNuevaCategoria] = useState({ nombre: "" });
     const [loading, setLoading] = useState(true);
 
@@ -23,7 +27,7 @@ const Categorias = () => {
                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             });
             setCategorias(response.data);
-        } catch  {
+        } catch {
             Swal.fire({
                 icon: "error",
                 title: "Error",
@@ -36,7 +40,6 @@ const Categorias = () => {
     };
 
     const handleCreate = async () => {
-        // Validación básica
         if (!nuevaCategoria.nombre.trim()) {
             Swal.fire({
                 icon: "warning",
@@ -60,7 +63,7 @@ const Categorias = () => {
                 text: "Categoría creada correctamente",
                 confirmButtonColor: "#3085d6",
             });
-        } catch  {
+        } catch {
             Swal.fire({
                 icon: "error",
                 title: "Error",
@@ -95,7 +98,7 @@ const Categorias = () => {
                 text: "La categoría ha sido eliminada",
                 confirmButtonColor: "#3085d6",
             });
-        } catch  {
+        } catch {
             Swal.fire({
                 icon: "error",
                 title: "Error",
@@ -109,10 +112,33 @@ const Categorias = () => {
         (c) => c.nombre.toLowerCase().includes(filtroNombre.toLowerCase())
     );
 
+    const handleUpdateCategoria = async () => {
+        if (!categoriaEdit.nombre.trim()) {
+            return Swal.fire("Campo requerido", "nombre categoria on puede estar vaicio", "warning");
+        }
+
+        try {
+            await axios.put(`http://localhost:5016/api/categorias/actualizar/${categoriaEdit.id}`,
+                { nombre: categoriaEdit.nombre },
+                { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+            );
+            fetchCategorias();
+            setModalEditarOpen(false);
+            setCategoriaEdit({ id: null, nombre: "" });
+            Swal.fire("Éxito", "Categoría actualizada correctamente", "success");
+        } catch {
+            Swal.fire("Error", "No se pudo actualizar la categoría", "error");
+        }
+    };
+    const handleOpenEditModal = (categoria) => {
+        setCategoriaEdit(categoria);
+        setModalEditarOpen(true);
+    };
+
     return (
         <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
             <div className="max-w-6xl mx-auto">
-                {/* Título con animación sutil */}
+
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-xl p-4 sm:p-6 mb-6 transform transition-all hover:scale-[1.01] duration-300">
                     <h2 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
                         <FaTable className="hidden sm:block text-white/80" />
@@ -123,7 +149,6 @@ const Categorias = () => {
                     </p>
                 </div>
 
-                {/* Panel de control con diseño mejorado */}
                 <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 border border-gray-100">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                         <div className="flex items-center gap-2">
@@ -157,7 +182,6 @@ const Categorias = () => {
                     </div>
                 </div>
 
-                {/* Tabla de categorías con estado de carga */}
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                     {loading ? (
                         <div className="flex justify-center items-center p-12">
@@ -187,14 +211,24 @@ const Categorias = () => {
                                         <td className="px-4 sm:px-6 py-3 sm:py-4 font-medium text-gray-900 text-sm sm:text-base">{categoria.nombre}</td>
                                         {esAdmin && (
                                             <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">
-                                                <button
-                                                    onClick={() => handleDelete(categoria.id)}
-                                                    className="bg-red-100 text-red-600 p-2 rounded-full hover:bg-red-200 hover:text-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400"
-                                                    title="Eliminar categoría"
-                                                    aria-label={`Eliminar categoría ${categoria.nombre}`}
-                                                >
-                                                    <FaTrash className="text-sm" />
-                                                </button>
+                                                <div className="flex justify-center gap-2">
+                                                    <button
+                                                        onClick={() => handleOpenEditModal(categoria)}
+                                                        className="bg-yellow-100 text-yellow-600 p-2 rounded-full hover:bg-yellow-200 hover:text-yellow-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                                        title="Editar categoría"
+                                                    >
+                                                        <FaEdit className="text-sm"/>
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => handleDelete(categoria.id)}
+                                                        className="bg-red-100 text-red-600 p-2 rounded-full hover:bg-red-200 hover:text-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+                                                        title="Eliminar categoría"
+                                                        aria-label={`Eliminar categoría ${categoria.nombre}`}
+                                                    >
+                                                        <FaTrash className="text-sm"/>
+                                                    </button>
+                                                </div>
                                             </td>
                                         )}
                                     </tr>
@@ -205,7 +239,34 @@ const Categorias = () => {
                     )}
                 </div>
 
-                {/* Modal para agregar categoría mejorado */}
+                {modalEditarOpen && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 z-50">
+                        <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg border" onClick={(e) => e.stopPropagation()}>
+                            <h2 className="text-xl font-bold mb-4 text-blue-700 flex items-center gap-2">
+                                <FaEdit className="text-blue-600" />
+                                Editar Categoría
+                            </h2>
+
+                            <input
+                                type="text"
+                                value={categoriaEdit.nombre}
+                                onChange={(e) => setCategoriaEdit({ ...categoriaEdit, nombre: e.target.value })}
+                                className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-400"
+                                placeholder="Nombre de la categoría"
+                            />
+
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button onClick={handleUpdateCategoria} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                    Actualizar
+                                </button>
+                                <button onClick={() => setModalEditarOpen(false)} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {modalAgregarOpen && (
                     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
                         <div
@@ -248,6 +309,8 @@ const Categorias = () => {
                         </div>
                     </div>
                 )}
+
+
             </div>
         </div>
     );
